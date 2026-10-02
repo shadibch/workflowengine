@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   User,
@@ -123,8 +123,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [oidcUser]);
 
   // Mirror the session into the non-React store consumed by the fetch layer.
+  // This must be a layout effect, not a passive one: on a fresh load (a deep
+  // link or refresh straight onto a page) this provider re-renders with the
+  // restored token in the same commit that mounts a child page, and that child
+  // fires its data fetch from a passive effect. Layout effects run before any
+  // passive effect, so the token is in the store by the time `api()` reads it;
+  // with a passive effect the first request went out unauthenticated and the
+  // 401 handler bounced the user to the login screen.
   const isAuthenticated = Boolean(oidcUser?.access_token) && !oidcUser?.expired;
-  useEffect(() => {
+  useLayoutEffect(() => {
     setSession({
       accessToken: oidcUser?.access_token ?? null,
       profile,

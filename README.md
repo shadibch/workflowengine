@@ -67,9 +67,9 @@ corepack pnpm dev
 
 ## Phase plan
 
-0. Foundations (toolchain, compose, schema, security, designer spike) — in progress
-1. Design & persistence (definitions CRUD + versioning API)
-2. Designer (properties panel, palette polish, lint, import/export)
+0. Foundations (toolchain, compose, schema, security, designer spike) — complete
+1. Design & persistence (definitions CRUD + versioning API) — complete
+2. Designer (properties panel, palette polish, lint, import/export) — in progress
 3. Engine core (token-based execution, gateway, timers, user tasks)
 4. Services + Kafka (REST/SOAP/message tasks, retries)
 5. Events + advanced (SSE dashboards, history, incident handling)
