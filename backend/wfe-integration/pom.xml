@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.wfe</groupId>
+    <artifactId>wfe-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>wfe-integration</artifactId>
+  <name>wfe-integration</name>
+  <description>
+    Outbound adapters implementing the core ports: HTTP/REST (WebClient), SOAP
+    (dynamic SAAJ envelope + XPath, no WSDL code generation), messaging (Kafka
+    in v1, RabbitMQ and JMS in v1.5), scripting (GraalJS in phase 3), and the
+    response-mapping layer shared by REST and SOAP.
+  </description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.wfe</groupId>
+      <artifactId>wfe-core</artifactId>
+    </dependency>
+
+    <!-- HTTP client. WebFlux gives non-blocking outbound calls with bounded
+         connection pools; the engine's job queue absorbs the latency. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webflux</artifactId>
+    </dependency>
+
+    <!-- SOAP. Deliberately not spring-boot-starter-ws: a designer-authored task
+         must call an arbitrary WSDL without a compile step, so requests are
+         built as raw SAAJ envelopes and responses are read with XPath. -->
+    <dependency>
+      <groupId>jakarta.xml.soap</groupId>
+      <artifactId>jakarta.xml.soap-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.sun.xml.messaging.saaj</groupId>
+      <artifactId>saaj-impl</artifactId>
+    </dependency>
+    <!-- Jackson's XML dataformat: normalises a SOAP DOM into a Map so the
+         response-mapping layer can evaluate XPath and JSONPath over the same
+         shape instead of maintaining two projection engines. -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-xml</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.kafka</groupId>
+      <artifactId>spring-kafka</artifactId>
+    </dependency>
+
+    <!-- Response mapping: JSONPath for REST, JMESPath as the alternte syntax. -->
+    <dependency>
+      <groupId>com.jayway.jsonpath</groupId>
+      <artifactId>json-path</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>jmespath-java</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.module</groupId>
+      <artifactId>jackson-module-parameter-names</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.projectreactor</groupId>
+      <artifactId>reactor-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.amazonaws</groupId>
+        <artifactId>jmespath-java</artifactId>
+        <version>1.12.797</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+</project>

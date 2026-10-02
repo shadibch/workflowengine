@@ -1,0 +1,146 @@
+{
+  "realm": "wfe",
+  "enabled": true,
+  "displayName": "Workflow Engine",
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "defaultSignatureAlgorithm": "RS256",
+
+  "clients": [
+    {
+      "clientId": "wfe-frontend",
+      "name": "Workflow Engine frontend",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "redirectUris": [
+        "http://localhost:5173/*",
+        "http://localhost:5173"
+      ],
+      "webOrigins": ["http://localhost:5173"],
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "implicitFlowEnabled": false,
+      "frontchannelLogout": true,
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:5173/*"
+      }
+    },
+    {
+      "clientId": "wfe-api",
+      "name": "Workflow Engine backend resource server",
+      "enabled": true,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "bearerOnly": true,
+      "serviceAccountsEnabled": false
+    }
+  ],
+
+  "roles": {
+    "realm": [
+      { "name": "admin",     "description": "Full access including identity, connections and audit" },
+      { "name": "designer",  "description": "May author, validate, publish and simulate workflow definitions" },
+      { "name": "operations","description": "Starts instances and administers running ones" },
+      { "name": "reviewer",  "description": "Candidate group for review user tasks" },
+      { "name": "viewer",    "description": "Read-only access to definitions, instances and dashboards" }
+    ]
+  },
+
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@wfe.local",
+      "firstName": "WFE",
+      "lastName": "Administrator",
+      "emailVerified": true,
+      "realmRoles": ["admin"],
+      "credentials": [
+        { "type": "password", "value": "admin123", "temporary": false }
+      ]
+    },
+    {
+      "username": "designer",
+      "enabled": true,
+      "email": "designer@wfe.local",
+      "firstName": "Dana",
+      "lastName": "Designer",
+      "emailVerified": true,
+      "realmRoles": ["designer"],
+      "credentials": [
+        { "type": "password", "value": "designer123", "temporary": false }
+      ]
+    },
+    {
+      "username": "ops",
+      "enabled": true,
+      "email": "ops@wfe.local",
+      "firstName": "Omar",
+      "lastName": "Operations",
+      "emailVerified": true,
+      "realmRoles": ["operations"],
+      "credentials": [
+        { "type": "password", "value": "ops123", "temporary": false }
+      ]
+    },
+    {
+      "username": "reviewer1",
+      "enabled": true,
+      "email": "reviewer1@wfe.local",
+      "firstName": "Rana",
+      "lastName": "Reviewer",
+      "emailVerified": true,
+      "realmRoles": ["reviewer"],
+      "credentials": [
+        { "type": "password", "value": "reviewer123", "temporary": false }
+      ]
+    },
+    {
+      "username": "reviewer2",
+      "enabled": true,
+      "email": "reviewer2@wfe.local",
+      "firstName": "Sami",
+      "lastName": "Reviewer",
+      "emailVerified": true,
+      "realmRoles": ["reviewer"],
+      "credentials": [
+        { "type": "password", "value": "reviewer123", "temporary": false }
+      ]
+    },
+    {
+      "username": "approver",
+      "enabled": true,
+      "email": "approver@wfe.local",
+      "firstName": "Aisha",
+      "lastName": "Approver",
+      "emailVerified": true,
+      "realmRoles": ["reviewer"],
+      "credentials": [
+        { "type": "password", "value": "approver123", "temporary": false }
+      ]
+    },
+    {
+      "username": "viewer",
+      "enabled": true,
+      "email": "viewer@wfe.local",
+      "firstName": "Vera",
+      "lastName": "Viewer",
+      "emailVerified": true,
+      "realmRoles": ["viewer"],
+      "credentials": [
+        { "type": "password", "value": "viewer123", "temporary": false }
+      ]
+    }
+  ],
+  "groups": [],
+  "scopeMappings": [],
+  "clientScopeMappings": {},
+  "protocolMappers": []
+}

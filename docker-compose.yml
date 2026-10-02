@@ -1,0 +1,98 @@
+# ---------------------------------------------------------------------------
+# Local development stack: Postgres 16, Kafka (KRaft), Keycloak 26.
+# Production deployment targets are Kubernetes + managed Postgres/Kafka; this
+# file exists purely for local work and the integration test suite.
+# ---------------------------------------------------------------------------
+
+name: wfe
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: wfe-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-wfe}
+      POSTGRES_USER: ${POSTGRES_USER:-wfe}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wfe_dev_pwd}
+      # Deterministic collation so ORDER BY on text matches production Linux.
+      POSTGRES_INITDB_ARGS: "--locale=C --encoding=UTF8"
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-wfe} -d ${POSTGRES_DB:-wfe}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [wfe]
+
+  kafka:
+    image: apache/kafka:3.9.1
+    container_name: wfe-kafka
+    environment:
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID:-wfe-kraft-01}
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      # Canonical single-node KRaft layout: advertise localhost, since both the
+      # API (host) and dev tools connect from the host. 3.9.1 fixes
+      # KAFKA-18281, which wrongly rejected the non-advertised CONTROLLER
+      # listener bound to 0.0.0.0 as non-routable.
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:${KAFKA_PORT:-9092}
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_NUM_PARTITIONS: 3
+    ports:
+      - "${KAFKA_PORT:-9092}:9092"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 20s
+    networks: [wfe]
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: wfe-keycloak
+    command: ["start-dev", "--import-realm", "--health-enabled=true"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-wfe}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin_dev_pwd}
+      KC_DB: dev-file
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-wfe}
+    ports:
+      - "${KEYCLOAK_PORT:-8081}:8080"
+    volumes:
+      - ./infra/keycloak/realms:/opt/keycloak/data/import:ro
+      - keycloak-data:/opt/keycloak/data
+    # The Keycloak image ships no curl/wget, so probe the TCP port with bash's
+    # /dev/tcp. Consumers must not depend on this being healthy: the backend only
+    # fetches JWKS lazily and caches it, so a cold Keycloak is not fatal.
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 3 bash -c '</dev/tcp/127.0.0.1/8080'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    networks: [wfe]
+
+volumes:
+  postgres-data:
+  kafka-data:
+  keycloak-data:
+
+networks:
+  wfe:
+    driver: bridge

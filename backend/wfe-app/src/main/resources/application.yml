@@ -1,0 +1,114 @@
+# ---------------------------------------------------------------------------
+#  Base configuration. Anything environment-specific lives in a profile file or
+#  in WFE_* environment variables, so this file is safe to commit as-is.
+# ---------------------------------------------------------------------------
+spring:
+  application:
+    name: wfe
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/wfe
+    username: wfe
+    password: wfe_dev_pwd
+    hikari:
+      # Sized against the job dispatcher's concurrency rather than guessed: each
+      # worker holds a connection for the duration of one engine transaction, so
+      # this must exceed (worker threads + HTTP threads) or requests queue behind
+      # timers. Tune together with wfe.engine.worker-threads.
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 10000
+      pool-name: wfe-pool
+
+  jpa:
+    open-in-view: false          # the engine works with explicit DTOs, not lazy graphs
+    hibernate:
+      # Flyway owns the schema. Hibernate must never alter it: a stray ddl-auto
+      # against a live database is how a versioned migration gets silently
+      # bypassed.
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc.time_zone: UTC
+        default_batch_size: 50
+        order_inserts: true
+        order_updates: true
+        query:
+          in_clause_parameter_padding: true
+        # Fail fast on a malformed query instead of logging it and returning
+        # nothing; a silently dropped authorization filter is a security bug.
+        fail_on_pagination_over_collection_fetch: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+    validate-on-migrate: true
+    # A checksum mismatch means a migration was edited after being applied,
+    # which invalidates every environment that already ran it.
+    clean-disabled: true
+
+  threads:
+    virtual:
+      # The API is I/O-bound on the database and outbound calls, so virtual
+      # threads let request concurrency track the database pool rather than
+      # a hand-tuned platform thread count.
+      enabled: true
+
+  mvc:
+    problemdetails:
+      enabled: true
+
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+      fail-on-empty-beans: false
+
+server:
+  # 8082, not 8080: the developer's host already publishes the HealthNexus
+  # "ClinicFlow" API stack on 8080, and the Vite dev proxy targets this port.
+  port: 8082
+  shutdown: graceful
+  # Long enough for an in-flight engine transaction to commit on shutdown, so a
+  # deploy does not strand a half-executed token.
+  spring.lifecycle.timeout-per-shutdown-phase: 30s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when-authorized
+  health:
+    db:
+      enabled: true
+
+wfe:
+  security:
+    # The API and the SPA must agree on this, or token validation fails with an
+    # issuer mismatch that is painful to diagnose.
+    issuer-uri: ${WFE_JWT_ISSUER_URI:http://localhost:8081/realms/wfe}
+    default-tenant-id: default
+    # Reject a valid token whose subject has no iam_user row. This is what makes
+    # a locally removed account lose access immediately.
+    require-user-row: true
+    clock-skew: 30s
+    allowed-origins: ${WFE_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  engine:
+    worker-threads: 8
+    job-poll-interval: 1s
+    job-batch-size: 50
+    job-claim-timeout: 5m
+    default-timeout: 30s
+
+logging:
+  level:
+    root: INFO
+    com.wfe: INFO
+    org.hibernate.SQL: WARN
+    org.flywaydb: INFO

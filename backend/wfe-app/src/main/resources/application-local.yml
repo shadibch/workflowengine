@@ -1,0 +1,44 @@
+# ---------------------------------------------------------------------------
+#  Local development profile. Activated with:
+#     mvn -pl wfe-app spring-boot:run -Dspring-boot.run.profiles=local
+#  or in the IDE. Not for any deployed environment.
+# ---------------------------------------------------------------------------
+spring:
+  config:
+    activate:
+      on-profile: local
+
+  # Inside docker-compose the API reaches Keycloak and Kafka by service name.
+  # The local Windows Postgres occupies 5432, so the compose Postgres is
+  # published on 5434 (see .env POSTGRES_PORT).
+  datasource:
+    url: ${WFE_DB_URL:jdbc:postgresql://localhost:5434/wfe}
+
+  flyway:
+    # The seed location provisions the local dev users. Keycloak generates the
+    # users' UUIDs at import, so seeds match rows by username; the converter
+    # stamps the token subject into iam_user.external_id on first login. It is
+    # repeatable and re-applied on every start.
+    locations: classpath:db/migration,classpath:db/seed
+
+  kafka:
+    bootstrap-servers: ${WFE_KAFKA_BOOTSTRAP:localhost:9092}
+    # Tests and local runs create their own topics.
+    admin:
+      fail-fast: false
+
+wfe:
+  security:
+    # From the host browser's point of view Keycloak is on localhost:8081; the
+    # value only has to be correct for whoever validates the token.
+    issuer-uri: ${WFE_KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/wfe}
+
+logging:
+  level:
+    com.wfe: DEBUG
+    com.wfe.persistence: DEBUG
+    # Uncomment to see every statement the engine issues, which is the fastest
+    # way to debug a stuck token.
+    # org.hibernate.SQL: DEBUG
+    # org.hibernate.orm.jdbc.bind: TRACE
+    com.wfe.engine: TRACE

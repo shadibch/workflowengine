@@ -1,0 +1,54 @@
+# ---- Java / Maven ----
+target/
+*.class
+*.jar
+*.war
+!.mvn/wrapper/maven-wrapper.jar
+.mvn/timeline.properties
+.flattened-pom.xml
+dependency-reduced-pom.xml
+
+# ---- Node / pnpm ----
+node_modules/
+dist/
+dist-ssr/
+.vite/
+*.local
+.eslintcache
+coverage/
+.pnpm-store/
+
+# ---- IDE ----
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.shared.json
+nbproject/
+.settings/
+.project
+.classpath
+
+# ---- OS ----
+Thumbs.db
+.DS_Store
+
+# ---- Local env & secrets ----
+.env
+.env.local
+*.env.local
+secrets/
+*.jks
+*.keystore
+*.p12
+src/main/resources/application-local.yml
+
+# ---- Runtime / temp ----
+logs/
+*.log
+tmp/
+tmp-*/
+data/
+uploads/
