@@ -171,8 +171,24 @@ public class DbJwtAuthenticationConverter
         return Optional.empty();
     }
 
+    /**
+     * Base for "the token is valid, the account behind it is not usable".
+     *
+     * <p>The two variants are answered identically by the API, so they share a
+     * type: the error handler can be declared once against this base rather than
+     * listing subtypes it cannot actually accept as a parameter.
+     */
+    public abstract static class AccountAccessException extends RuntimeException {
+
+        private static final long serialVersionUID = 1L;
+
+        protected AccountAccessException(String message) {
+            super(message);
+        }
+    }
+
     /** A valid token whose subject matches no local account. */
-    public static class UnknownAccountException extends RuntimeException {
+    public static class UnknownAccountException extends AccountAccessException {
 
         private static final long serialVersionUID = 1L;
 
@@ -183,7 +199,7 @@ public class DbJwtAuthenticationConverter
     }
 
     /** A local account that exists but is suspended or disabled. */
-    public static class InactiveAccountException extends RuntimeException {
+    public static class InactiveAccountException extends AccountAccessException {
 
         private static final long serialVersionUID = 1L;
 

@@ -165,9 +165,8 @@ public class ApiExceptionHandler {
      * token <em>is</em> valid, so sending the client back to the login screen
      * would loop. It needs an administrator to restore access.
      */
-    @ExceptionHandler({DbJwtAuthenticationConverter.UnknownAccountException.class,
-            DbJwtAuthenticationConverter.InactiveAccountException.class})
-    ResponseEntity<ProblemDetail> handleAccount(DbJwtAuthenticationConverter.UnknownAccountException ex) {
+    @ExceptionHandler(DbJwtAuthenticationConverter.AccountAccessException.class)
+    ResponseEntity<ProblemDetail> handleAccount(DbJwtAuthenticationConverter.AccountAccessException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN,
                 "This account is not provisioned or not permitted to use the system");
         problem.setType(URI.create(TYPE_BASE + "account-not-authorised"));
